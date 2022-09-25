@@ -1,25 +1,19 @@
-cmake_minimum_required(VERSION 3.12)
+if (TARGET tinyusb_device)
+    include_directories("coremark")
+    aux_source_directory(. src_coremark)
+    add_executable(coremark ${src_coremark})
 
-# Pull in PICO SDK (must be before project)
-include(pico_sdk_import.cmake)
+    # pull in common dependencies
+    target_link_libraries(coremark pico_stdlib)
+    pico_set_binary_type(coremark no_flash)
 
-project(pico_examples C CXX ASM)
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+    # enable usb output, disable uart output
+    pico_enable_stdio_usb(coremark 1)
+    pico_enable_stdio_uart(coremark 0)
 
-set(PICO_EXAMPLES_PATH ${PROJECT_SOURCE_DIR})
+    # create map/bin/hex file etc.
+    pico_add_extra_outputs(coremark)
 
-# Initialize the SDK
-pico_sdk_init()
-
-include_directories("coremark")
-aux_source_directory(./coremark src_coremark)
-add_executable(coremark ${src_coremark} )
-
-# Pull in our pico_stdlib which aggregates commonly used features
-target_link_libraries(coremark pico_stdlib)
-pico_set_binary_type(coremark no_flash)
-
-# create map/bin/hex/uf2 file etc.
-pico_add_extra_outputs(coremark)
+elseif(PICO_ON_DEVICE)
+    message(WARNING "not building coremark because TinyUSB submodule is not initialized in the SDK")
+endif()

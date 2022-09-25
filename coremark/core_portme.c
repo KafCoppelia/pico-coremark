@@ -15,13 +15,9 @@ limitations under the License.
 
 Original Author: Shay Gal-on
 */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "coremark.h"
-#include "pico/time.h"
-#include "pico/stdlib.h"
+#include "core_portme.h"
+#include "hardware/clocks.h"
 
 #if VALIDATION_RUN
 volatile ee_s32 seed1_volatile = 0x3415;
@@ -46,6 +42,11 @@ volatile ee_s32 seed5_volatile = 0;
    cpu clock cycles performance counter etc. Sample implementation for standard
    time.h and windows.h definitions included.
 */
+CORETIMETYPE
+barebones_clock()
+{
+    return time_us_32();
+}
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be
    measured.
@@ -54,19 +55,15 @@ volatile ee_s32 seed5_volatile = 0;
    does not occur. If there are issues with the return value overflowing,
    increase this value.
         */
-// #define NSECS_PER_SEC              CLOCKS_PER_SEC
-// #define CORETIMETYPE               clock_t
-// #define GETMYTIME(_t)              (*_t = clock())
-// #define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
-// #define TIMER_RES_DIVIDER          1
-// #define SAMPLE_TIME_IMPLEMENTATION 1
-#define EE_TICKS_PER_SEC              1000000
+#define GETMYTIME(_t)              (*_t = barebones_clock())
+#define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
+#define TIMER_RES_DIVIDER          1
+#define SAMPLE_TIME_IMPLEMENTATION 1
+#define CLOCKS_PER_SEC             1000000
+#define EE_TICKS_PER_SEC           (CLOCKS_PER_SEC / TIMER_RES_DIVIDER)
 
 /** Define Host specific (POSIX), or target specific global time variables. */
-// static CORETIMETYPE start_time_val, stop_time_val;
-
-uint32_t t_start = 0;
-uint32_t t_stop = 0;
+static CORETIMETYPE start_time_val, stop_time_val;
 
 /* Function : start_time
         This function will be called right before starting the timed portion of
@@ -79,7 +76,8 @@ uint32_t t_stop = 0;
 void
 start_time(void)
 {
-    t_start = time_us_32();
+    GETMYTIME(&start_time_val);
+    // t_start = time_us_32();
 }
 /* Function : stop_time
         This function will be called right after ending the timed portion of the
@@ -92,7 +90,8 @@ start_time(void)
 void
 stop_time(void)
 {
-    t_stop = time_us_32();
+    GETMYTIME(&stop_time_val);
+    // t_stop = time_us_32();
 }
 /* Function : get_time
         Return an abstract "ticks" number that signifies time on the system.
@@ -106,7 +105,10 @@ stop_time(void)
 CORE_TICKS
 get_time(void)
 {
-    return t_stop - t_start;
+    CORE_TICKS elapsed
+        = (CORE_TICKS)(MYTIMEDIFF(stop_time_val, start_time_val));
+    return elapsed;
+    // return t_stop - t_start;
 }
 /* Function : time_in_secs
         Convert the value returned by get_time to seconds.

@@ -15,7 +15,6 @@ limitations under the License.
 
 Original Author: Shay Gal-on
 */
-
 /* Topic : Description
         This file contains configuration constants required to execute on
    different platforms
@@ -59,12 +58,6 @@ Original Author: Shay Gal-on
 #define HAS_PRINTF 1
 #endif
 
-/* Configuration : CORE_TICKS
-        Define type of return from the timing functions.
- */
-#include <time.h>
-typedef clock_t CORE_TICKS;
-
 /* Definitions : COMPILER_VERSION, COMPILER_FLAGS, MEM_LOCATION
         Initialize these strings per platform
 */
@@ -90,6 +83,7 @@ typedef clock_t CORE_TICKS;
         ee_ptr_int needs to be the data type used to hold pointers, otherwise
    coremark may fail!!!
 */
+#include "pico/time.h"
 typedef signed short   ee_s16;
 typedef unsigned short ee_u16;
 typedef signed int     ee_s32;
@@ -98,11 +92,18 @@ typedef unsigned char  ee_u8;
 typedef unsigned int   ee_u32;
 typedef ee_u32         ee_ptr_int;
 typedef size_t         ee_size_t;
+// #define NULL ((void*)0)
 /* align_mem :
         This macro is used to align an offset to point to a 32b value. It is
    used in the Matrix algorithm to initialize the input memory blocks.
 */
 #define align_mem(x) (void *)(4 + (((ee_ptr_int)(x)-1) & ~3))
+
+/* Configuration : CORE_TICKS
+        Define type of return from the timing functions.
+ */
+#define CORETIMETYPE ee_u32
+typedef ee_u32 CORE_TICKS;
 
 /* Configuration : SEED_METHOD
         Defines method to get seed values that cannot be computed at compile
@@ -176,7 +177,7 @@ typedef size_t         ee_size_t;
         1 - platform does not support returning a value from main
 */
 #ifndef MAIN_HAS_NORETURN
-#define MAIN_HAS_NORETURN 1
+#define MAIN_HAS_NORETURN 0
 #endif
 
 /* Variable : default_num_contexts
@@ -203,5 +204,7 @@ void portable_fini(core_portable *p);
 #define VALIDATION_RUN 1
 #endif
 #endif
+
+int ee_printf(const char *fmt, ...);
 
 #endif /* CORE_PORTME_H */
